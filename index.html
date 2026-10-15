@@ -1,0 +1,212 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BadyetBuddy | Student Budget Planner</title>
+<style>
+:root{--navy:#17365d;--blue:#2167ac;--bg:#eef3f8;--muted:#64748b;--green:#16803c;--red:#c43b42}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);font-family:Arial,Helvetica,sans-serif;color:var(--navy)}
+header{background:linear-gradient(135deg,#173e75,#287cb5);color:white;text-align:center;padding:38px 18px}
+header h1{font-size:clamp(30px,5vw,46px);margin:0 0 12px}
+header p{margin:0;font-size:17px;line-height:1.5}
+main{max-width:900px;margin:26px auto;padding:0 15px}
+.card{background:white;border-radius:22px;padding:24px;margin-bottom:22px;box-shadow:0 8px 28px #19365d0c}
+h2{font-size:24px;margin:0 0 10px}
+.hint{color:var(--muted);line-height:1.5;margin-bottom:22px}
+label{display:block;font-weight:bold;margin:15px 0 8px}
+input,select,textarea{width:100%;padding:14px;border:1.5px solid #cbd5e1;border-radius:12px;font:inherit;background:#fff;color:#111}
+input:focus,select:focus,textarea:focus{outline:2px solid #8dbbe9;border-color:var(--blue)}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.summary{background:#f3f8ff;border-radius:16px;padding:18px;margin-bottom:14px}
+.big{font-size:34px;font-weight:bold;margin:8px 0;color:var(--green)}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.stat{background:#f7f9fc;border-radius:13px;padding:13px}
+.stat span{display:block;color:var(--muted);font-size:13px;margin-bottom:8px}
+.stat strong{font-size:18px;overflow-wrap:anywhere}
+.budget-row{border:1px solid #e2e8f0;border-radius:14px;padding:15px;margin-top:12px}
+.budget-head{display:flex;justify-content:space-between;gap:10px;font-weight:bold}
+.budget-head span:last-child{white-space:nowrap}
+.track{height:10px;background:#e5eaf1;border-radius:20px;overflow:hidden;margin-top:12px}
+.fill{height:100%;width:0;background:#3b82f6;transition:width .2s}
+.fill.over{background:var(--red)}
+.row{display:grid;grid-template-columns:1fr 130px 42px;gap:8px;align-items:center;margin-top:10px}
+.row input{min-width:0}
+.remove{border:0;background:#fff0f0;color:var(--red);border-radius:10px;height:44px;font-size:22px;cursor:pointer}
+button{border:0;border-radius:12px;padding:13px 17px;font:inherit;font-weight:bold;cursor:pointer}
+.primary{background:var(--blue);color:white}
+.secondary{background:#e9f1fb;color:var(--blue)}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+.actions button{flex:1}
+.expense{border:1px solid #e2e8f0;border-radius:12px;padding:12px;margin-top:10px;display:flex;justify-content:space-between;gap:12px;align-items:center}
+.expense small{display:block;color:var(--muted);margin-top:5px}
+.message{margin-top:12px;color:var(--green);font-weight:bold}
+footer{text-align:center;padding:20px;color:var(--muted);font-size:13px}
+@media(max-width:560px){main{padding:0 12px}.card{padding:18px;border-radius:17px}.grid{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}.row{grid-template-columns:minmax(0,1fr) 95px 36px;gap:6px}.row input{padding:12px 9px}.budget-head{font-size:14px}}
+@media print{body{background:white}header{background:white!important;color:#17365d;padding:15px}main{max-width:none;margin:0;padding:0}.card{box-shadow:none;border:1px solid #ddd;break-inside:avoid;padding:15px;margin-bottom:12px}.no-print,button,.remove{display:none!important}input,select,textarea{border:1px solid #ccc;padding:7px;color:#111}.expense{break-inside:avoid}footer{padding:8px}}
+</style>
+</head>
+<body>
+<header>
+<h1>💰 BadyetBuddy</h1>
+<p>Your simple student budget planner.<br>Plan wisely, spend carefully, save for your goals.</p>
+</header>
+<main>
+<section class="card">
+<h2>📊 Your Budget Overview</h2>
+<p class="hint">Your totals update automatically as you enter your money and expenses.</p>
+<div class="summary">
+<div>Money left</div>
+<div class="big" id="remaining">₱0.00</div>
+<div class="stats">
+<div class="stat"><span>Total income</span><strong id="totalIncome">₱0.00</strong></div>
+<div class="stat"><span>Planned budget</span><strong id="totalPlanned">₱0.00</strong></div>
+<div class="stat"><span>Actual spent</span><strong id="totalSpent">₱0.00</strong></div>
+</div>
+</div>
+<div id="overviewBars"></div>
+<div id="notice" class="message" role="status">Add your income to get started.</div>
+</section>
+
+<section class="card">
+<h2>1. About You</h2>
+<div class="grid">
+<div><label for="studentName">Student name</label><input id="studentName" placeholder="Enter your name"></div>
+<div><label for="grade">Grade and section</label><input id="grade" placeholder="e.g. Grade 12 - ABM"></div>
+</div>
+<label for="period">Budget period</label>
+<select id="period"><option>Weekly</option><option>Monthly</option><option>Daily</option></select>
+</section>
+
+<section class="card">
+<h2>2. Your Income</h2>
+<p class="hint">Enter the money you expect to receive during your selected budget period.</p>
+<div id="incomeRows"></div>
+<button class="secondary no-print" id="addIncome">＋ Add income source</button>
+<div class="budget-head" style="margin-top:20px"><span>Total income</span><span id="incomeTotal2">₱0.00</span></div>
+</section>
+
+<section class="card">
+<h2>3. Plan Your Budget</h2>
+<p class="hint">Suggested split: 50% for needs, 30% for wants, and 20% for savings. You can change the percentages.</p>
+<div class="grid">
+<div><label for="needsPct">Needs (%)</label><input id="needsPct" type="number" min="0" max="100" value="50"></div>
+<div><label for="wantsPct">Wants (%)</label><input id="wantsPct" type="number" min="0" max="100" value="30"></div>
+<div><label for="savingsPct">Savings (%)</label><input id="savingsPct" type="number" min="0" max="100" value="20"></div>
+<div class="summary"><strong>Total percentage</strong><div class="big" style="font-size:25px" id="pctTotal">100%</div><div id="pctMessage">Your percentages add up correctly.</div></div>
+</div>
+<div id="budgetRows"></div>
+</section>
+
+<section class="card">
+<h2>4. Track Your Expenses</h2>
+<p class="hint">Record what you actually spend. Your remaining money updates automatically.</p>
+<div class="grid">
+<div><label for="expenseDate">Date</label><input type="date" id="expenseDate"></div>
+<div><label for="expenseCategory">Category</label><select id="expenseCategory"><option>Needs</option><option>Wants</option><option>Savings</option></select></div>
+<div><label for="expenseDescription">What did you buy?</label><input id="expenseDescription" placeholder="e.g. Snacks or fare"></div>
+<div><label for="expenseAmount">Amount (₱)</label><input type="number" id="expenseAmount" min="0" step="0.01" placeholder="0.00"></div>
+</div>
+<div class="actions no-print"><button class="primary" id="addExpense">＋ Add expense</button></div>
+<div id="expenseList"></div>
+<p id="emptyExpenses" class="hint">No expenses added yet.</p>
+</section>
+
+<section class="card">
+<h2>5. Quick Reflection</h2>
+<label for="reflection">What did you learn from planning your budget?</label>
+<textarea id="reflection" rows="4" placeholder="Write a few sentences about your spending and saving goals..."></textarea>
+<div class="actions no-print">
+<button class="primary" id="savePlan">💾 Save Plan</button>
+<button class="secondary" id="pdfButton">📄 Save as PDF</button>
+<button class="secondary" id="clearButton">Clear Plan</button>
+</div>
+<div id="saveMessage" class="message" role="status"></div>
+</section>
+</main>
+<footer>BadyetBuddy · Make thoughtful choices with your money.</footer>
+
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+const peso=n=>'₱'+(Number(n)||0).toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2});
+const defaultIncome=[
+{id:1,name:'Allowance',amount:0},
+{id:2,name:'Family support',amount:0},
+{id:3,name:'Scholarship / grant',amount:0},
+{id:4,name:'Part-time job',amount:0}
+];
+const defaultBudgets=[
+{id:'needs',name:'Needs',pct:'needsPct',items:[{name:'Food and groceries',amount:0},{name:'Transportation',amount:0},{name:'School supplies',amount:0},{name:'Phone and internet',amount:0}]},
+{id:'wants',name:'Wants',pct:'wantsPct',items:[{name:'Snacks and drinks',amount:0},{name:'Entertainment',amount:0},{name:'Shopping',amount:0}]},
+{id:'savings',name:'Savings',pct:'savingsPct',items:[{name:'Emergency fund',amount:0},{name:'Savings goal',amount:0}]}
+];
+let incomes=structuredClone(defaultIncome),budgets=structuredClone(defaultBudgets),expenses=[],nextId=10;
+function totalIncome(){return incomes.reduce((s,x)=>s+Math.max(0,Number(x.amount)||0),0)}
+function totalBudget(b){return b.items.reduce((s,x)=>s+Math.max(0,Number(x.amount)||0),0)}
+function totalPlanned(){return budgets.reduce((s,b)=>s+totalBudget(b),0)}
+function totalSpent(){return expenses.reduce((s,e)=>s+e.amount,0)}
+function safe(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function renderIncome(){
+$('incomeRows').innerHTML=incomes.map(x=>`<div class="row"><input aria-label="Income source" data-income-name="${x.id}" value="${safe(x.name)}"><input aria-label="Income amount" data-income-amount="${x.id}" type="number" min="0" step=".01" value="${x.amount}" placeholder="₱0"><button class="remove no-print" data-remove-income="${x.id}" aria-label="Remove income">×</button></div>`).join('');
+}
+function renderBudgets(){
+$('budgetRows').innerHTML=budgets.map(b=>`<div class="budget-row"><div class="budget-head"><span>${safe(b.name)} · ${Number($(b.pct).value)||0}%</span><span>${peso(totalBudget(b))} / ${peso(totalIncome()*(Number($(b.pct).value)||0)/100)}</span></div><div class="track"><div class="fill" style="width:${totalIncome()?Math.min(100,totalBudget(b)/(totalIncome()*(Number($(b.pct).value)||1)/100||1)*100):0}%"></div></div>${b.items.map((x,i)=>`<div class="row"><input aria-label="${safe(b.name)} budget item" data-budget-name="${b.id}:${i}" value="${safe(x.name)}"><input aria-label="${safe(x.name)} planned amount" data-budget-amount="${b.id}:${i}" type="number" min="0" step=".01" value="${x.amount}" placeholder="₱0"><button class="remove no-print" data-remove-budget="${b.id}:${i}" aria-label="Remove item">×</button></div>`).join('')}<button class="secondary no-print" data-add-budget="${b.id}" style="margin-top:10px">＋ Add item</button></div>`).join('');
+}
+function renderExpenses(){
+$('expenseList').innerHTML=expenses.map(e=>`<div class="expense"><div><strong>${safe(e.description)}</strong><small>${safe(e.date)} · ${safe(e.category)}</small></div><div style="text-align:right"><strong>${peso(e.amount)}</strong><button class="remove no-print" data-remove-expense="${e.id}" aria-label="Delete expense" style="display:block;margin-top:5px;width:100%">Delete</button></div></div>`).join('');
+$('emptyExpenses').hidden=expenses.length>0;
+}
+function update(){
+const income=totalIncome(),planned=totalPlanned(),spent=totalSpent(),left=income-spent;
+$('totalIncome').textContent=peso(income);$('incomeTotal2').textContent=peso(income);
+$('totalPlanned').textContent=peso(planned);$('totalSpent').textContent=peso(spent);
+$('remaining').textContent=peso(left);$('remaining').style.color=left<0?'var(--red)':'var(--green)';
+const pcts=['needsPct','wantsPct','savingsPct'].map(id=>Math.max(0,Number($(id).value)||0));
+const pct=pcts.reduce((a,b)=>a+b,0);
+$('pctTotal').textContent=pct+'%';
+$('pctMessage').textContent=pct===100?'Your percentages add up correctly.':'Adjust your percentages so the total is 100%.';
+$('pctMessage').style.color=pct===100?'var(--green)':'var(--red)';
+$('overviewBars').innerHTML=budgets.map(b=>{const actual=expenses.filter(e=>e.category===b.name).reduce((s,e)=>s+e.amount,0),limit=income*(Number($(b.pct).value)||0)/100;return `<div class="budget-row"><div class="budget-head"><span>${safe(b.name)} spent</span><span>${peso(actual)} / ${peso(limit)}</span></div><div class="track"><div class="fill ${actual>limit?'over':''}" style="width:${limit?Math.min(100,actual/limit*100):actual?100:0}%"></div></div></div>`}).join('');
+$('notice').textContent=income===0?'Add your income to get started.':left<0?'Warning: your expenses are greater than your income.':spent>planned?'You still have money overall, but actual expenses exceed your planned budget.':'Great! Your remaining balance is '+peso(left)+'.';
+renderBudgets();renderExpenses();
+}
+function save(silent){
+try{
+const data={studentName:$('studentName').value,grade:$('grade').value,period:$('period').value,incomes,budgets,expenses,nextId,needsPct:$('needsPct').value,wantsPct:$('wantsPct').value,savingsPct:$('savingsPct').value,reflection:$('reflection').value};
+localStorage.setItem('badyetbuddy-plan',JSON.stringify(data));
+if(!silent)$('saveMessage').textContent='Plan saved on this device.';
+}catch(e){$('saveMessage').textContent='Could not save on this browser. Try another browser or print as PDF.'}
+}
+function load(){
+try{const d=JSON.parse(localStorage.getItem('badyetbuddy-plan'));if(!d)return;
+$('studentName').value=d.studentName||'';$('grade').value=d.grade||'';$('period').value=d.period||'Weekly';
+incomes=d.incomes||structuredClone(defaultIncome);budgets=d.budgets||structuredClone(defaultBudgets);expenses=d.expenses||[];nextId=d.nextId||10;
+$('needsPct').value=d.needsPct??50;$('wantsPct').value=d.wantsPct??30;$('savingsPct').value=d.savingsPct??20;$('reflection').value=d.reflection||'';
+}catch(e){}
+}
+$('addIncome').addEventListener('click',()=>{incomes.push({id:nextId++,name:'New income',amount:0});renderIncome();update();save(true)});
+$('incomeRows').addEventListener('input',e=>{const n=e.target.dataset.incomeName,a=e.target.dataset.incomeAmount;if(n){incomes.find(x=>x.id==n).name=e.target.value;update();save(true)}if(a){incomes.find(x=>x.id==a).amount=Math.max(0,Number(e.target.value)||0);update();save(true)}});
+$('incomeRows').addEventListener('click',e=>{const id=e.target.dataset.removeIncome;if(id){incomes=incomes.filter(x=>x.id!=id);renderIncome();update();save(true)}});
+$('budgetRows').addEventListener('input',e=>{const n=e.target.dataset.budgetName,a=e.target.dataset.budgetAmount;if(n){const [id,i]=n.split(':');budgets.find(b=>b.id===id).items[Number(i)].name=e.target.value;update();save(true)}if(a){const [id,i]=a.split(':');budgets.find(b=>b.id===id).items[Number(i)].amount=Math.max(0,Number(e.target.value)||0);update();save(true)}});
+$('budgetRows').addEventListener('click',e=>{if(e.target.dataset.addBudget){budgets.find(b=>b.id===e.target.dataset.addBudget).items.push({name:'New item',amount:0});update();save(true)}const r=e.target.dataset.removeBudget;if(r){const [id,i]=r.split(':');budgets.find(b=>b.id===id).items.splice(Number(i),1);update();save(true)}});
+['studentName','grade','period','reflection','needsPct','wantsPct','savingsPct'].forEach(id=>$(id).addEventListener('input',()=>{update();save(true)}));
+$('addExpense').addEventListener('click',()=>{
+const description=$('expenseDescription').value.trim(),amount=Number($('expenseAmount').value);
+if(!description){alert('Please enter what you spent money on.');$('expenseDescription').focus();return}
+if(!Number.isFinite(amount)||amount<=0){alert('Please enter an amount greater than zero.');$('expenseAmount').focus();return}
+expenses.unshift({id:nextId++,date:$('expenseDate').value||new Date().toISOString().slice(0,10),category:$('expenseCategory').value,description,amount});
+$('expenseDescription').value='';$('expenseAmount').value='';update();save(true);
+});
+$('expenseList').addEventListener('click',e=>{const id=e.target.dataset.removeExpense;if(id){expenses=expenses.filter(x=>x.id!=id);update();save(true)}});
+$('savePlan').addEventListener('click',()=>save(false));
+$('pdfButton').addEventListener('click',()=>{save(true);window.print()});
+$('clearButton').addEventListener('click',()=>{if(!confirm('Clear your saved budget and start again?'))return;localStorage.removeItem('badyetbuddy-plan');location.reload()});
+$('expenseDate').value=new Date().toISOString().slice(0,10);
+load();renderIncome();update();
+})();
+</script>
+</body>
+</html>
