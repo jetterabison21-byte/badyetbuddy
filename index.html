@@ -152,9 +152,30 @@ function safe(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;'
 function renderIncome(){
 $('incomeRows').innerHTML=incomes.map(x=>`<div class="row"><input aria-label="Income source" data-income-name="${x.id}" value="${safe(x.name)}"><input aria-label="Income amount" data-income-amount="${x.id}" type="number" min="0" step=".01" value="${x.amount}" placeholder="₱0"><button class="remove no-print" data-remove-income="${x.id}" aria-label="Remove income">×</button></div>`).join('');
 }
+
 function renderBudgets(){
-$('budgetRows').innerHTML=budgets.map(b=>`<div class="budget-row"><div class="budget-head"><span>${safe(b.name)} · ${Number($(b.pct).value)||0}%</span><span>${peso(totalBudget(b))} / ${peso(totalIncome()*(Number($(b.pct).value)||0)/100)}</span></div><div class="track"><div class="fill" style="width:${totalIncome()?Math.min(100,totalBudget(b)/(totalIncome()*(Number($(b.pct).value)||1)/100||1)*100):0}%"></div></div>${b.items.map((x,i)=>`<div class="row"><input aria-label="${safe(b.name)} budget item" data-budget-name="${b.id}:${i}" value="${safe(x.name)}"><input aria-label="${safe(x.name)} planned amount" data-budget-amount="${b.id}:${i}" type="number" min="0" step=".01" value="${x.amount}" placeholder="₱0"><button class="remove no-print" data-remove-budget="${b.id}:${i}" aria-label="Remove item">×</button></div>`).join('')}<button class="secondary no-print" data-add-budget="${b.id}" style="margin-top:10px">＋ Add item</button></div>`).join('');
+  const container = $('budgetRows');
+  container.innerHTML = budgets.map(b => `
+    <div class="budget-row">
+      <div class="budget-head">
+        <span>${safe(b.name)} · ${Number($(b.pct).value)||0}%</span>
+        <span>${peso(totalBudget(b))} / ${peso(totalIncome()*(Number($(b.pct).value)||0)/100)}</span>
+      </div>
+      <div class="track">
+        <div class="fill" style="width:${totalIncome()?Math.min(100,totalBudget(b)/(totalIncome()*(Number($(b.pct).value)||1)/100||1)*100):0}%"></div>
+      </div>
+      ${b.items.map((x,i) => `
+        <div class="row">
+          <input aria-label="${safe(b.name)} budget item" data-budget-name="${b.id}:${i}" value="${safe(x.name)}">
+          <input aria-label="${safe(x.name)} planned amount" data-budget-amount="${b.id}:${i}" type="number" min="0" step=".01" value="${x.amount}" placeholder="₱0">
+          <button class="remove no-print" data-remove-budget="${b.id}:${i}" aria-label="Remove item">×</button>
+        </div>
+      `).join('')}
+      <button class="secondary no-print" data-add-budget="${b.id}" style="margin-top:10px">＋ Add item</button>
+    </div>
+  `).join('');
 }
+
 function renderExpenses(){
 $('expenseList').innerHTML=expenses.map(e=>`<div class="expense"><div><strong>${safe(e.description)}</strong><small>${safe(e.date)} · ${safe(e.category)}</small></div><div style="text-align:right"><strong>${peso(e.amount)}</strong><button class="remove no-print" data-remove-expense="${e.id}" aria-label="Delete expense" style="display:block;margin-top:5px;width:100%">Delete</button></div></div>`).join('');
 $('emptyExpenses').hidden=expenses.length>0;
